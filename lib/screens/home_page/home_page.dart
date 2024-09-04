@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solo_safe_wallet/routes/app_routes.dart';
-import 'package:solo_safe_wallet/screens/auth/create_wallet.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:solo_safe_wallet/screens/home_page/widgets/latest_transactions.dart';
+import 'package:solo_safe_wallet/screens/home_page/widgets/mainnet_testnet.dart';
+import 'package:solo_safe_wallet/screens/home_page/widgets/your_wallet.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -9,49 +12,36 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String _address = "";
-
-  @override
-  void initState(){
-    super.initState();
-    _loadPreferences();
-  }
-
-  _loadPreferences() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _address = prefs.getString("public_key") ?? "";
-    });
-  }
+  // To toggle full address display
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("SoloSafe"),
+        title: Text("SoloSafe Wallet"),
         actions: [
           IconButton(
             icon: Icon(Icons.settings),
-            onPressed: () async {
-              // SharedPreferences prefs = await SharedPreferences.getInstance();
+            onPressed: () {
               Navigator.pushNamed(context, AppRoutes.settings);
-            }),
+            },
+          ),
         ],
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Text(
-            "Welcome to your Home Page!",
-            style: TextStyle(fontSize: 20),
-          ),
-          SizedBox(height: 20),
-          Text(
-            "Your Address: $_address",
-            style: TextStyle(fontSize: 16),
-          ),
-          
-        ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Network Toggle
+            // MainnetTestnet(),
+            SizedBox(height: 10),
+            YourWallet(),
+            SizedBox(height: 30),
+            // Tabs for Online and Offline Transactions
+            LatestTransactions()
+          ],
+        ),
       ),
     );
   }
