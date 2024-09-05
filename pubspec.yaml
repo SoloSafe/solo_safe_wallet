@@ -47,6 +47,7 @@ dependencies:
   package_info_plus: ^8.0.2
   flutter_dotenv: ^5.1.0
   qr_flutter: ^4.1.0
+  flutter_bluetooth_serial: ^0.4.0
 
 dev_dependencies:
   flutter_test:

@@ -25,6 +25,8 @@ class SendReceive extends StatelessWidget{
             onPressed: () {
               if(send_type == "online"){
                 Navigator.pushNamed(context, '/receive_online');
+              } else {
+                Navigator.pushNamed(context, '/receive_offline');
               }
             },
             child: Text("Receive", style: TextStyle(color: Colors.black87)),
