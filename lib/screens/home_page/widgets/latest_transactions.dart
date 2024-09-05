@@ -31,13 +31,50 @@ class _LatestTransactionsState extends State<LatestTransactions> {
                 unselectedLabelColor: Colors.grey,
                 indicatorColor: Colors.blue,
                 tabs: [
-                  Tab(text: "Online Transactions"),
                   Tab(text: "Offline Transactions"),
+                  Tab(text: "Online Transactions"),
                 ],
               ),
               Expanded(
                 child: TabBarView(
                   children: [
+                    Column(
+                      children: [
+                        SizedBox(height: 15),
+                        SendReceive(send_type: "offline",),
+                        SizedBox(height: 15),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: _offlineTransactions.length,
+                            itemBuilder: (context, index) {
+                              final transaction = _offlineTransactions[index];
+                              return Card(
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: ListTile(
+                                  leading: Icon(
+                                    Icons.offline_bolt,
+                                    color: Colors.grey,
+                                  ),
+                                  title: Text(
+                                    "${transaction['amount']}",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: Text(
+                                    "${transaction['status']} - ${transaction['time']}",
+                                    style: TextStyle(
+                                        fontSize: 14, color: Colors.grey[600]),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                     Column(
                       children: [
                         SizedBox(height: 15),
@@ -80,43 +117,7 @@ class _LatestTransactionsState extends State<LatestTransactions> {
                       ],
                     ),
                     // Offline Transactions Tab
-                    Column(
-                      children: [
-                        SizedBox(height: 15),
-                        SendReceive(send_type: "offline",),
-                        SizedBox(height: 15),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: _offlineTransactions.length,
-                            itemBuilder: (context, index) {
-                              final transaction = _offlineTransactions[index];
-                              return Card(
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                child: ListTile(
-                                  leading: Icon(
-                                    Icons.offline_bolt,
-                                    color: Colors.grey,
-                                  ),
-                                  title: Text(
-                                    "${transaction['amount']}",
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Text(
-                                    "${transaction['status']} - ${transaction['time']}",
-                                    style: TextStyle(
-                                        fontSize: 14, color: Colors.grey[600]),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+                    
                   ],
                 ),
               ),

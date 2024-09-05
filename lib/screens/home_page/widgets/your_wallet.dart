@@ -107,7 +107,7 @@ class _YourWalletState extends State<YourWallet> {
                     onPressed: () {},
                     icon: Icon(
                       Icons.upload_sharp,
-                      color: Colors.white,
+                      color: Colors.yellow,
                     ))
               ]),
               SizedBox(height: 5),
@@ -132,7 +132,7 @@ class _YourWalletState extends State<YourWallet> {
                     onPressed: () {},
                     icon: Icon(
                       Icons.download_sharp,
-                      color: Colors.white,
+                      color: Colors.lightGreenAccent,
                     ))
               ])
             ],

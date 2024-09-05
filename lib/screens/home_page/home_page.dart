@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             // Network Toggle
             // MainnetTestnet(),
-            TokenListWidget(tokens: ["STRK", "ETH", "BTC", "USDT"]),
+            TokenListWidget(tokens: ["USDT", "STRK", "ETH", "BTC"]),
             SizedBox(height: 10),
             YourWallet(),
             SizedBox(height: 30),

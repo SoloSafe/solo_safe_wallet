@@ -11,15 +11,23 @@ class SendReceive extends StatelessWidget{
       child: Row(children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: () {},
-            child: Text("Send"),
+            onPressed: () {
+              if(send_type == "online"){
+                Navigator.pushNamed(context, '/send_online');
+              }
+            },
+            child: Text("Send", style: TextStyle(color: Colors.black87)),
           ),
         ),
         SizedBox(width: 10),
         Expanded(
           child: ElevatedButton(
-            onPressed: () {},
-            child: Text("Receive"),
+            onPressed: () {
+              if(send_type == "online"){
+                Navigator.pushNamed(context, '/receive_online');
+              }
+            },
+            child: Text("Receive", style: TextStyle(color: Colors.black87)),
           ),
         ),
       ],),
