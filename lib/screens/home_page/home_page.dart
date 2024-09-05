@@ -4,6 +4,7 @@ import 'package:solo_safe_wallet/routes/app_routes.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:solo_safe_wallet/screens/home_page/widgets/latest_transactions.dart';
 import 'package:solo_safe_wallet/screens/home_page/widgets/mainnet_testnet.dart';
+import 'package:solo_safe_wallet/screens/home_page/widgets/token_list.dart';
 import 'package:solo_safe_wallet/screens/home_page/widgets/send_receive.dart';
 import 'package:solo_safe_wallet/screens/home_page/widgets/your_wallet.dart';
 
@@ -36,6 +37,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             // Network Toggle
             // MainnetTestnet(),
+            TokenListWidget(tokens: ["STRK", "ETH", "BTC", "USDT"]),
             SizedBox(height: 10),
             YourWallet(),
             SizedBox(height: 30),

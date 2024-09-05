@@ -34,7 +34,10 @@ class _YourWalletState extends State<YourWallet> {
 
     setState(() {
       _address = publicKey;
-      _onlineBalance = double.parse(balance.getValueInUnit(EtherUnit.ether).toDouble().toStringAsFixed(4));
+      _onlineBalance = double.parse(balance
+          .getValueInUnit(EtherUnit.ether)
+          .toDouble()
+          .toStringAsFixed(4));
     });
   }
 
@@ -71,7 +74,7 @@ class _YourWalletState extends State<YourWallet> {
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 0),
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -83,33 +86,54 @@ class _YourWalletState extends State<YourWallet> {
                   style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
               ),
-              SizedBox(height: 10),
-              Row(children: [
-                Text(
-                  "Online balance :  ",
-                  style: TextStyle(color: Colors.white70),
+              SizedBox(height: 20),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Row(
+                  children: [
+                    Text(
+                      "Online balance :  ",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    Text(
+                      "$_onlineBalance ETH",
+                      style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    )
+                  ],
                 ),
-                Text(
-                  "$_onlineBalance ETH",
-                  style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                )
+                IconButton(
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.upload_sharp,
+                      color: Colors.white,
+                    ))
               ]),
               SizedBox(height: 5),
-              Row(children: [
-                Text(
-                  "Offline balance :  ",
-                  style: TextStyle(color: Colors.white70),
+              Divider(color: Colors.white70),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Row(
+                  children: [
+                    Text(
+                      "Offline balance :  ",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    Text(
+                      "$_offlineBalance ETH",
+                      style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    )
+                  ],
                 ),
-                Text(
-                  "$_offlineBalance ETH",
-                  style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                )
+                IconButton(
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.download_sharp,
+                      color: Colors.white,
+                    ))
               ])
             ],
           ),
