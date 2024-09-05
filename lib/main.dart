@@ -4,10 +4,10 @@ import 'package:solo_safe_wallet/screens/auth/start_auth.dart';
 import 'package:solo_safe_wallet/screens/home_page/home_page.dart';
 import 'screens/auth/create_wallet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
-  // WidgetsFlutterBinding.ensureInitialized();
-  // await SharedPreferences.getInstance();
+  await dotenv.load(fileName: ".env");
   runApp(MyApp());
 }
 

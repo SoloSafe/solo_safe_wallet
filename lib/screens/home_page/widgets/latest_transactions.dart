@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:solo_safe_wallet/screens/home_page/widgets/send_receive.dart';
 
 class LatestTransactions extends StatefulWidget {
   @override
@@ -37,69 +38,84 @@ class _LatestTransactionsState extends State<LatestTransactions> {
               Expanded(
                 child: TabBarView(
                   children: [
-                    // Online Transactions Tab
-                    ListView.builder(
-                      itemCount: _onlineTransactions.length,
-                      itemBuilder: (context, index) {
-                        final transaction = _onlineTransactions[index];
-                        return Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            leading: Icon(
-                              transaction['type'] == 'Received'
-                                  ? Icons.arrow_downward
-                                  : Icons.arrow_upward,
-                              color: transaction['type'] == 'Received'
-                                  ? Colors.green
-                                  : Colors.red,
-                            ),
-                            title: Text(
-                              "${transaction['amount']}",
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              "${transaction['type']} - ${transaction['time']}",
-                              style: TextStyle(
-                                  fontSize: 14, color: Colors.grey[600]),
-                            ),
+                    Column(
+                      children: [
+                        SizedBox(height: 15),
+                        SendReceive(send_type: "online",),
+                        SizedBox(height: 15),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: _onlineTransactions.length,
+                            itemBuilder: (context, index) {
+                              final transaction = _onlineTransactions[index];
+                              return Card(
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: ListTile(
+                                  leading: Icon(
+                                    transaction['type'] == 'Received'
+                                        ? Icons.arrow_downward
+                                        : Icons.arrow_upward,
+                                    color: transaction['type'] == 'Received'
+                                        ? Colors.green
+                                        : Colors.red,
+                                  ),
+                                  title: Text(
+                                    "${transaction['amount']}",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: Text(
+                                    "${transaction['type']} - ${transaction['time']}",
+                                    style: TextStyle(
+                                        fontSize: 14, color: Colors.grey[600]),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
                     // Offline Transactions Tab
-                    ListView.builder(
-                      itemCount: _offlineTransactions.length,
-                      itemBuilder: (context, index) {
-                        final transaction = _offlineTransactions[index];
-                        return Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.offline_pin,
-                              color: transaction['status'] == 'Confirmed'
-                                  ? Colors.green
-                                  : transaction['status'] == 'Wait'
-                                      ? Colors.orange
-                                      : Colors.grey,
-                            ),
-                            title: Text(
-                              "${transaction['amount']}",
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              "${transaction['status']} - ${transaction['time']}",
-                              style: TextStyle(
-                                  fontSize: 14, color: Colors.grey[600]),
-                            ),
+                    Column(
+                      children: [
+                        SizedBox(height: 15),
+                        SendReceive(send_type: "offline",),
+                        SizedBox(height: 15),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: _offlineTransactions.length,
+                            itemBuilder: (context, index) {
+                              final transaction = _offlineTransactions[index];
+                              return Card(
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: ListTile(
+                                  leading: Icon(
+                                    Icons.offline_bolt,
+                                    color: Colors.grey,
+                                  ),
+                                  title: Text(
+                                    "${transaction['amount']}",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: Text(
+                                    "${transaction['status']} - ${transaction['time']}",
+                                    style: TextStyle(
+                                        fontSize: 14, color: Colors.grey[600]),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ],
                 ),

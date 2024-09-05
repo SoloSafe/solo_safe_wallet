@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:solo_safe_wallet/services/eth_service.dart';
+import 'package:web3dart/web3dart.dart';
 
 class YourWallet extends StatefulWidget {
   @override
@@ -10,8 +12,10 @@ class _YourWalletState extends State<YourWallet> {
   String _address = "";
   bool _showFullAddress = false;
 
-  double _onlineBalance = 12.3; // Replace with actual online balance logic
-  double _offlineBalance = 5.0; // Replace with actual offline balance logic
+  final ethService = EthService();
+
+  double _onlineBalance = 0; // Replace with actual online balance logic
+  double _offlineBalance = 0; // Replace with actual offline balance logic
 
   @override
   void initState() {
@@ -21,8 +25,16 @@ class _YourWalletState extends State<YourWallet> {
 
   _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    String publicKey = prefs.getString("public_key") ?? "";
+    print("The public KEY is $publicKey");
+
+    // Ensure the getBalance method is awaited and the result is handled correctly
+    final balance = await ethService.getBalance(publicKey);
+    print(balance);
+
     setState(() {
-      _address = prefs.getString("public_key") ?? "";
+      _address = publicKey;
+      _onlineBalance = double.parse(balance.getValueInUnit(EtherUnit.ether).toDouble().toStringAsFixed(4));
     });
   }
 

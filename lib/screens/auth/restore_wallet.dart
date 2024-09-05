@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip32/bip32.dart' as bip32;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:solo_safe_wallet/screens/home_page/home_page.dart';
 import 'package:web3dart/web3dart.dart';
 import 'package:hex/hex.dart';
 
@@ -46,6 +48,18 @@ class _RestoreWalletPageState extends State<RestoreWalletPage> {
         _publicKey = publicKey.hex;
         _isRestoring = false;
       });
+
+      // save the keys into SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString("private_key", privateKey);
+      await prefs.setString("public_key", publicKey.hex);
+      await prefs.setString("mnemonic", mnemonic);
+
+      // Navigate to HomePage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage()),
+      );
     } else {
       setState(() {
         _privateKey = "Invalid Mnemonic!";
@@ -96,11 +110,6 @@ class _RestoreWalletPageState extends State<RestoreWalletPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Private Key:",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
                   SelectableText(
                     _privateKey!,
                     style: TextStyle(fontSize: 16, color: Colors.blueGrey),
