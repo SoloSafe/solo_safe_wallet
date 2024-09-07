@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:solo_safe_wallet/screens/offline_transactions/receive/receive_offline.dart';
+import 'package:solo_safe_wallet/screens/offline_transactions/send/send_message_page.dart';
+import 'package:solo_safe_wallet/screens/offline_transactions/send/send_offline.dart';
 import 'package:solo_safe_wallet/screens/online_transactions/receive/receive_online.dart';
 import 'package:solo_safe_wallet/screens/online_transactions/send/send_online.dart';
 import 'package:solo_safe_wallet/screens/settings/settings_page.dart';
@@ -13,6 +15,8 @@ class AppRoutes{
   static const String receive_online = '/receive_online';
   static const String send_online = '/send_online';
   static const String receive_offline = '/receive_offline';
+  static const String send_offline = '/send_offline';
+  static const String send_message_page = '/send_message_page';
 
   static Map<String, WidgetBuilder> routes = {
     startAuth: (context) => StartAuthPage(),
@@ -22,5 +26,6 @@ class AppRoutes{
     receive_online: (context) => ReceiveCryptoPage(),
     send_online: (context) => SendOnlinePage(),
     receive_offline: (context) => ReceiveOfflinePage(),
+    send_offline: (context) => SendOfflinePage()
   };
 }
