@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:solo_safe_wallet/screens/offline_transactions/receive/receive_offline.dart';
-import 'package:solo_safe_wallet/screens/offline_transactions/send/send_message_page.dart';
 import 'package:solo_safe_wallet/screens/offline_transactions/send/send_offline.dart';
 import 'package:solo_safe_wallet/screens/online_transactions/receive/receive_online.dart';
 import 'package:solo_safe_wallet/screens/online_transactions/send/send_online.dart';

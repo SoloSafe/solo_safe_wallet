@@ -1,6 +1,6 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class SendOfflinePage extends StatefulWidget {
@@ -9,100 +9,55 @@ class SendOfflinePage extends StatefulWidget {
 }
 
 class _SendOfflinePageState extends State<SendOfflinePage> {
-  bool isBluetoothEnabled = false;
-  bool isBluetoothConnected = false;
-  List<BluetoothDevice> devices = [];
-  BluetoothDevice? selectedDevice;
-  BluetoothCharacteristic? selectedCharacteristic;
+  String? ipAddress;
+  int? port;
   bool isConnecting = false;
+  bool isConnected = false;
+  Socket? socket;
 
   @override
-  void initState() {
-    super.initState();
-    _checkBluetoothPermissions();
+  void dispose() {
+    _disconnectSocket();
+    super.dispose();
   }
 
-  Future<void> _checkBluetoothPermissions() async {
-    // Check and request Bluetooth permissions
-    if (await Permission.bluetoothScan.request().isGranted &&
-        await Permission.bluetoothConnect.request().isGranted &&
-        await Permission.bluetooth.request().isGranted &&
-        await Permission.location.request().isGranted) {
-      _startDeviceDiscovery();
-    } else {
-      print('Bluetooth permissions not granted.');
-      await Permission.bluetoothScan.request();
-      await Permission.bluetoothConnect.request();
-      await Permission.location.request();
-    }
-  }
-
-  Future<void> _startDeviceDiscovery() async {
-    setState(() {
-      devices.clear();
-    });
-
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
-
-    // Listen to scan results
-    FlutterBluePlus.scanResults.listen((results) {
-      if (results.isNotEmpty) {
-        setState(() {
-          devices = results.map((result) => result.device).toList();
-        });
-      }
-    }).onDone(() {
-      print("Discovery finished");
-    });
-  }
-
-  Future<void> _connectToDevice(BluetoothDevice device) async {
+  Future<void> _connectToServer(String ip, int port) async {
     setState(() {
       isConnecting = true;
     });
 
     try {
-      await device.connect();
-
-      // Note: You must call discoverServices after every re-connection!
-      List<BluetoothService> services = await device.discoverServices();
-      services.forEach((service) {
-        // do something with service
-        // print services 
-        print(service.uuid);
-        print(service.characteristics);
-      });
-
-      return;
-
-      print('Connected to the device');
-      setState(() {
-        isBluetoothConnected = true;
-        selectedDevice = device;
-        isConnecting = false;
-      });
-
-      // Navigate to the next page for sending the amount
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SendAmountPage(device: selectedDevice!),
-        ),
-      );
+      socket = await Socket.connect(ip, port, timeout: Duration(seconds: 5));
+      if (mounted) {
+        setState(() {
+          isConnected = true;
+          isConnecting = false;
+        });
+      }
     } catch (e) {
-      print("Error connecting: $e");
+      print("Error connecting to server: $e");
+      if (mounted) {
+        setState(() {
+          isConnecting = false;
+          isConnected = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _disconnectSocket() async {
+    await socket?.close();
+    if (mounted) {
       setState(() {
-        isConnecting = false;
+        isConnected = false;
       });
     }
   }
 
-  @override
-  void dispose() {
-    if (selectedDevice != null) {
-      selectedDevice!.disconnect();
-    }
-    super.dispose();
+  Future<void> _scanQRCode() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('QR Code scanning feature is coming soon')),
+    );
   }
 
   @override
@@ -114,55 +69,124 @@ class _SendOfflinePageState extends State<SendOfflinePage> {
           title: Text('Send Offline'),
           bottom: TabBar(
             tabs: [
+              Tab(text: 'WiFi'),
               Tab(text: 'Bluetooth'),
-              Tab(text: 'Hotspot'), // Placeholder for later
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            // Bluetooth Tab
+            // WiFi Tab
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: _startDeviceDiscovery,
-                    child: Text('Discover Devices'),
+                    onPressed: _scanQRCode,
+                    child: Text('Scan QR Code'),
                   ),
                   SizedBox(height: 20),
-                  if (devices.isNotEmpty) ...[
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: devices.length,
-                        itemBuilder: (context, index) {
-                          final device = devices[index];
-                          return ListTile(
-                            title: Text(device.name.isNotEmpty
-                                ? device.name
-                                : 'Unknown Device'),
-                            subtitle: Text(device.id.toString()),
-                            trailing: ElevatedButton(
-                              onPressed: isConnecting
-                                  ? null
-                                  : () => _connectToDevice(device),
-                              child: Text('Pair'),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManualInputPage(
+                            onSubmit: (ip, port) {
+                              ipAddress = ip;
+                              this.port = port;
+                              _connectToServer(ip, port);
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    child: Text('Enter IP & Port Manually'),
+                  ),
+                  SizedBox(height: 20),
+                  if (isConnecting)
+                    CircularProgressIndicator()
+                  else if (isConnected) ...[
+                    Icon(Icons.check_circle, color: Colors.green, size: 60),
+                    SizedBox(height: 20),
+                    Text('Connected to server! Ready to send funds.'),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SendAmountPage(
+                              socket: socket!,
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
+                      child: Text('Send Money'),
                     ),
                   ] else ...[
-                    Text('No devices found'),
+                    Text('Not connected'),
                   ],
                 ],
               ),
             ),
-            // Hotspot Tab (Placeholder)
+            // Bluetooth Tab (Placeholder)
             Center(
-              child:
-                  Text('Hotspot: Ready to send funds (Implementation pending)'),
+              child: Text(
+                'Bluetooth feature is under development.',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Manual IP and Port Input Page
+class ManualInputPage extends StatefulWidget {
+  final Function(String ip, int port) onSubmit;
+
+  ManualInputPage({required this.onSubmit});
+
+  @override
+  _ManualInputPageState createState() => _ManualInputPageState();
+}
+
+class _ManualInputPageState extends State<ManualInputPage> {
+  final _ipController = TextEditingController();
+  final _portController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Enter IP & Port')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _ipController,
+              decoration: InputDecoration(labelText: 'IP Address'),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              controller: _portController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: 'Port'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                final ip = _ipController.text;
+                final port = int.tryParse(_portController.text) ?? 0;
+                widget.onSubmit(ip, port);
+                Navigator.pop(context);
+              },
+              child: Text('Connect'),
             ),
           ],
         ),
@@ -173,9 +197,9 @@ class _SendOfflinePageState extends State<SendOfflinePage> {
 
 // Page for entering the amount to send
 class SendAmountPage extends StatefulWidget {
-  final BluetoothDevice device;
+  final Socket socket;
 
-  SendAmountPage({required this.device});
+  SendAmountPage({required this.socket});
 
   @override
   _SendAmountPageState createState() => _SendAmountPageState();
@@ -183,36 +207,29 @@ class SendAmountPage extends StatefulWidget {
 
 class _SendAmountPageState extends State<SendAmountPage> {
   final _amountController = TextEditingController();
-  BluetoothCharacteristic? selectedCharacteristic;
 
   Future<void> _sendAmount() async {
     final amount = _amountController.text;
-    if (selectedCharacteristic != null) {
-      await selectedCharacteristic!.write(Uint8List.fromList(amount.codeUnits));
-      print("Amount sent: $amount");
-    }
+    final message = "$amount:SEND";
+    widget.socket.add(Uint8List.fromList(message.codeUnits));
+    print("Amount sent: $amount");
 
-    await widget.device.disconnect();
-    Navigator.pop(context);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _discoverServices();
-  }
-
-  Future<void> _discoverServices() async {
-    List<BluetoothService> services = await widget.device.discoverServices();
-    for (BluetoothService service in services) {
-      for (BluetoothCharacteristic characteristic in service.characteristics) {
-        if (characteristic.properties.write) {
-          setState(() {
-            selectedCharacteristic = characteristic;
-          });
-        }
-      }
-    }
+    // Show success dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Transaction Complete"),
+        content: Text("Funds sent successfully!"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.popUntil(context, ModalRoute.withName('/'));
+            },
+            child: Text("OK"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

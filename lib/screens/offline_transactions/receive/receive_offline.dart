@@ -1,102 +1,103 @@
-import 'dart:typed_data';
+import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:clipboard/clipboard.dart'; // Using clipboard package
+import 'package:network_info_plus/network_info_plus.dart'; // For getting WiFi IP address
+import 'package:flutter/animation.dart'; // For animation
 
 class ReceiveOfflinePage extends StatefulWidget {
   @override
-  _ReceiveOfflinePageState createState() => _ReceiveOfflinePageState();
+  _ReceiveCryptoPageState createState() => _ReceiveCryptoPageState();
 }
 
-class _ReceiveOfflinePageState extends State<ReceiveOfflinePage>
+class _ReceiveCryptoPageState extends State<ReceiveOfflinePage>
     with SingleTickerProviderStateMixin {
-  bool isBluetoothListening = false;
-  String? bluetoothAddress;
-  String receivedAmount = '';
-  BluetoothCharacteristic? selectedCharacteristic;
-  BluetoothDevice? selectedDevice;
-  List<BluetoothDevice> devices = [];
-  bool isConnecting = false;
+  String walletAddress = '';
+  String wifiIp = '';
+  int selectedPort = 0;
+  bool isListening = false;
+  bool isConnected = false;
   late AnimationController _controller;
+  ServerSocket? serverSocket;
 
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: Duration(seconds: 2))
-          ..repeat(reverse: true);
-    _initializeBluetooth();
+    _loadWalletAddress();
+    _initializeNetwork();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 2),
+    )..repeat(reverse: true);
   }
 
-  Future<void> _initializeBluetooth() async {
-    if (await FlutterBluePlus.isSupported == false) {
-      print("Bluetooth not supported by this device");
-      return;
-    }
-    if (await FlutterBluePlus.adapterState.first != BluetoothAdapterState.on) {
-      await FlutterBluePlus.turnOn();
-    }
-    bluetoothAddress = await FlutterBluePlus.adapterName ?? 'Unknown';
-    _startDeviceDiscovery();
-  }
-
-  Future<void> _startDeviceDiscovery() async {
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
-
-    FlutterBluePlus.scanResults.listen((results) {
+  Future<void> _loadWalletAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (mounted) {
       setState(() {
-        devices = results.map((result) => result.device).toList();
+        walletAddress = prefs.getString('public_key') ?? 'No address found';
       });
-    }).onDone(() {
-      print("Device Discovery completed");
-    });
+    }
   }
 
-  Future<void> _connectToDevice(BluetoothDevice device) async {
-    setState(() {
-      isConnecting = true;
-    });
-
-    try {
-      await device.connect();
-      List<BluetoothService> services = await device.discoverServices();
-      for (BluetoothService service in services) {
-        for (BluetoothCharacteristic characteristic in service.characteristics) {
-          if (characteristic.properties.read) {
-            setState(() {
-              selectedCharacteristic = characteristic;
-            });
-          }
-        }
-      }
+  Future<void> _initializeNetwork() async {
+    final info = NetworkInfo();
+    String? ipAddress = await info.getWifiIP();
+    if (mounted) {
       setState(() {
-        selectedDevice = device;
-        isBluetoothListening = true;
-        isConnecting = false;
+        wifiIp = ipAddress ?? 'Unknown IP';
+        selectedPort = Random().nextInt(7700) + 32300; // Random port between 32300-40000
+      });
+    }
+  }
+
+  Future<void> _startListening() async {
+    try {
+      serverSocket = await ServerSocket.bind(wifiIp, selectedPort);
+      if (mounted) {
+        setState(() {
+          isListening = true;
+        });
+      }
+      serverSocket!.listen((Socket client) {
+        if (mounted) {
+          setState(() {
+            isConnected = true;
+            isListening = false;
+          });
+        }
+        _controller.stop();
+        print('Connection from ${client.remoteAddress}');
+        client.listen((data) {
+          print('Data received: ${String.fromCharCodes(data)}');
+        });
       });
     } catch (e) {
-      print("Error while connecting to the device: $e");
+      print("Error starting socket: $e");
+    }
+  }
+
+  Future<void> _stopListening() async {
+    await serverSocket?.close();
+    if (mounted) {
       setState(() {
-        isConnecting = false;
+        isListening = false;
+        isConnected = false;
+        _controller.repeat(reverse: true); // Restart animation
       });
     }
   }
 
-  Future<void> _startListeningForMessages() async {
-    if (selectedCharacteristic != null && selectedDevice != null) {
-      List<int> value = await selectedCharacteristic!.read();
-      setState(() {
-        receivedAmount = String.fromCharCodes(value);
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    if (selectedDevice != null) {
-      selectedDevice!.disconnect();
-    }
-    _controller.dispose();
-    super.dispose();
+  void _copyAddress() {
+    FlutterClipboard.copy(walletAddress).then((value) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Address copied to clipboard!')),
+        );
+      }
+    });
   }
 
   Widget _buildListeningAnimation() {
@@ -142,82 +143,86 @@ class _ReceiveOfflinePageState extends State<ReceiveOfflinePage>
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    _stopListening(); // Ensure that the server socket is properly closed
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Receive Offline'),
+          title: Text('Receive Crypto'),
+          centerTitle: true,
           bottom: TabBar(
             tabs: [
+              Tab(text: 'WiFi'),
               Tab(text: 'Bluetooth'),
-              Tab(text: 'Hotspot'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            // Bluetooth Tab
+            // WiFi Tab
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    'Bluetooth Address: $bluetoothAddress',
+                    'WiFi IP: $wifiIp\nPort: $selectedPort',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 20),
-                  if (!isBluetoothListening) ...[
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: devices.length,
-                        itemBuilder: (context, index) {
-                          final device = devices[index];
-                          return ListTile(
-                            title: Text(device.name.isNotEmpty
-                                ? device.name
-                                : 'Unknown Device'),
-                            subtitle: Text(device.id.toString()),
-                            trailing: ElevatedButton(
-                              onPressed: isConnecting
-                                  ? null
-                                  : () => _connectToDevice(device),
-                              child: Text('Pair'),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ] else ...[
+                  if (isListening) ...[
                     _buildListeningAnimation(),
                     SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: _startListeningForMessages,
-                      child: Text('Receive Funds'),
+                      onPressed: _stopListening,
+                      child: Text('Stop Listening'),
                     ),
-                    if (receivedAmount.isNotEmpty)
-                      Text(
-                        'Received Amount: $receivedAmount',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
+                  ] else if (isConnected) ...[
+                    Icon(Icons.check_circle, color: Colors.green, size: 60),
+                    SizedBox(height: 20),
+                    Text(
+                      'Device Connected. Waiting for transaction...',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ] else ...[
+                    ElevatedButton(
+                      onPressed: _startListening,
+                      child: Text('Start Listening'),
+                    ),
                   ],
+                  SizedBox(height: 40),
+                  Text(
+                    "Scan the QR Code to send crypto",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: QrImageView(
+                      data: "solo://$wifiIp:$selectedPort",
+                      version: QrVersions.auto,
+                      size: 200.0,
+                    ),
+                  ),
+                  Spacer(),
                 ],
               ),
             ),
-            // Hotspot Tab (Placeholder)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Hotspot: Ready to receive funds',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 20),
-                ],
+
+            // Bluetooth Tab (Placeholder)
+            Center(
+              child: Text(
+                'Bluetooth feature is under development.',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
